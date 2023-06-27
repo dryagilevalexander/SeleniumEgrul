@@ -1,6 +1,8 @@
 ﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.DevTools.V112.Audits;
+using SeleniumApp;
+using System.Data.Common;
 using System.Reflection.Metadata;
 using System.Security.Authentication;
 using static System.Net.Mime.MediaTypeNames;
@@ -12,7 +14,18 @@ if(inn!=null)
 {
     if(inn.Length==10)
     {
-        getPartnerData(inn);
+        var partner = getPartnerData(inn);
+        if(partner != null)
+        {
+            Console.WriteLine("Наименование контрагента: " + partner.Name);
+            Console.WriteLine("Адрес: " + partner.Adress);
+            Console.WriteLine("ОГРН: " + partner.Ogrn);
+            Console.WriteLine("Дата присвоения ОГРН: " + partner.DateOgrn);
+            Console.WriteLine("ИНН: " + partner.Inn);
+            Console.WriteLine("КПП: " + partner.Kpp);
+            Console.WriteLine("Тип руководителя: " + partner.DirType);
+            Console.WriteLine("ФИО руководителя: " + partner.DirName);
+        }
     }
     else
     {
@@ -26,7 +39,7 @@ else
 
 Console.WriteLine("Program end");
 
-void getPartnerData(string inn)
+Partner? getPartnerData(string inn)
 {
     ChromeOptions options = new ChromeOptions(); //создаем экземпляр хром
     options.PageLoadStrategy = PageLoadStrategy.Normal; //ожидаем нормальной загрузки страниц
@@ -43,15 +56,24 @@ void getPartnerData(string inn)
         string address = partnerData.Substring(0, partnerData.IndexOf(", ОГРН")); //Получаем адрес
         partnerData = partnerData.Remove(0, address.Length + 1);                  //Удаляем адрес для упрощения разбора строки
         string[] partnerParameters = partnerData.Split(',');                      //Разбираем строку, разделить запятая
-        Console.WriteLine(partnerName);
-        Console.WriteLine(address);
-        foreach (var parameter in partnerParameters)
+
+        Partner partner = new Partner
         {
-            Console.WriteLine(parameter.Remove(0, parameter.IndexOf(": ") + 2));  //Выводим данные контрагента, удаляя ненужные символы
-        }
+            Adress = address,
+            Name = partnerName,
+            Ogrn = partnerParameters[0].Remove(0, partnerParameters[0].IndexOf(": ") + 2),
+            DateOgrn = partnerParameters[1].Remove(0, partnerParameters[1].IndexOf(": ") + 2),
+            Inn = partnerParameters[2].Remove(0, partnerParameters[2].IndexOf(": ") + 2),
+            Kpp = partnerParameters[3].Remove(0, partnerParameters[3].IndexOf(": ") + 2),
+            DirType = partnerParameters[4].Split(':')[0].Remove(0,1),
+        DirName = partnerParameters[4].Remove(0, partnerParameters[4].IndexOf(": ") + 2)
+        };
+        
+    return partner;
     }
     catch
     {
         Console.WriteLine("Контрагент не найден"); //Если блок try вызвал ошибку - контрагент не найден
+        return null;
     }
 }
